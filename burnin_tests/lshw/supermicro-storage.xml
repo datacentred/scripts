@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<list>
+  <node>
+    <vendor>Supermicro</vendor>
+    <product>X8DTT-H (1234567890)</product>
+    <node id="core">
+      <node id="cpu:0">
+        <slot>CPU 1</slot>
+        <version>Intel(R) Xeon(R) CPU           E5520  @ 2.27GHz</version>
+        <configuration>
+          <setting id="cores" value="4" />
+          <setting id="enabledcores" value="4" />
+          <setting id="threads" value="8" />
+        </configuration>
+        <capabilities>
+          <capability id="vmx" />
+        </capabilities>
+      </node>
+      <node id="cpu:1">
+        <slot>CPU 2</slot>
+        <version>Intel(R) Xeon(R) CPU           E5520  @ 2.27GHz</version>
+        <configuration>
+          <setting id="cores" value="4" />
+          <setting id="enabledcores" value="4" />
+          <setting id="threads" value="8" />
+        </configuration>
+        <capabilities>
+          <capability id="vmx" />
+        </capabilities>
+      </node>
+      <node id="memory:0">
+        <node id="bank:0">
+          <slot>P1-DIMM1A</slot>
+          <description>DIMM DDR3 1066 MHz (0.9 ns)</description>
+          <size units="bytes">4294967296</size>
+        </node>
+        <node id="bank:1">
+          <slot>P1-DIMM1B</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+        <node id="bank:2">
+          <slot>P1-DIMM2A</slot>
+          <description>DIMM DDR3 1066 MHz (0.9 ns)</description>
+          <size units="bytes">4294967296</size>
+        </node>
+        <node id="bank:3">
+          <slot>P1-DIMM2B</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+        <node id="bank:4">
+          <slot>P1-DIMM3A</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+        <node id="bank:5">
+          <slot>P1-DIMM3B</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+        <node id="bank:6">
+          <slot>P2-DIMM1A</slot>
+          <description>DIMM DDR3 1066 MHz (0.9 ns)</description>
+          <size units="bytes">4294967296</size>
+        </node>
+        <node id="bank:7">
+          <slot>P2-DIMM1B</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+        <node id="bank:8">
+          <slot>P2-DIMM2A</slot>
+          <description>DIMM DDR3 1066 MHz (0.9 ns)</description>
+          <size units="bytes">4294967296</size>
+        </node>
+        <node id="bank:9">
+          <slot>P2-DIMM2B</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+        <node id="bank:10">
+          <slot>P2-DIMM3A</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+        <node id="bank:11">
+          <slot>P2-DIMM3B</slot>
+          <description>DIMM DDR3 [empty]</description>
+        </node>
+      </node>
+      <node id="scsi">
+        <node id="disk">
+          <description>ATA Disk</description>
+          <businfo>scsi@0:0.0.0</businfo>
+          <size units="bytes">251059544064</size>
+        </node>
+      </node>
+    </node>
+  </node>
+</list>
