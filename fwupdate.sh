@@ -68,8 +68,9 @@ function verify_bios {
 function copy_bios_settings {
 	# Copies BIOS settings, required 'nvram' LKM to loaded and /dev/nvram present
 	# We don't check for this as it's part of our base image.
+	# Also needs 'nvramtool' to work properly
 	echo "Copying BIOS settings... "
-	dd if=$NVRAM of=/dev/nvram
+	nvramtool -B $NVRAM
 	echo "... done!"
 }
 
