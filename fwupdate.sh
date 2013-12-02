@@ -11,14 +11,19 @@ BIOSFWVER="2.1b"
 
 ## Filesystem locations
 FWHOME=/usr/local/lib/firmware
+### IPMI Firmware
 IPMIFW=$FWHOME/ipmi/$IPMIFWVER/X8DTT220.ima
-BIOSFW=$FWHOME/bios/$BIOSFWVER/X8DTTH1.a28
-NVRAM=$FWHOME/nvram/nvram.bin
+### BIOS Firmware.  Note that this should be a dump (via flashrom) from a configured
+### machine, and should match the NVRAM dump taken below.
+BIOSFW=$FWHOME/bios/$BIOSFWVER/dcbios.bin
+### NVRAM settings.  See above.
+NVRAM=$FWHOME/nvram/dcnvram.bin
 
 ## Tools
 YAFUHOME=/usr/local/bin/yafuflash
 IPMITOOL=$(which ipmitool)
 FLASHROM=$(which flashrom)
+NVRAMTOOL=$(which nvramtool)
 
 function check_ipmi_ver {
 	# Checks whether the current IPMI firmware revision matches what's defined in $IPMIFWVER
@@ -66,11 +71,11 @@ function verify_bios {
 }
 
 function copy_bios_settings {
-	# Copies BIOS settings, required 'nvram' LKM to loaded and /dev/nvram present
+	# Copies BIOS settings, requires 'nvram' LKM to loaded and /dev/nvram present
 	# We don't check for this as it's part of our base image.
-	# Also needs 'nvramtool' to work properly
+	# Also needs 'nvramtool' to work properly.
 	echo "Copying BIOS settings... "
-	nvramtool -B $NVRAM
+	$NVRAMTOOL -B $NVRAM
 	echo "... done!"
 }
 
