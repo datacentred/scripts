@@ -20,7 +20,7 @@ BIOSFW=$FWHOME/bios/$BIOSFWVER/dcbios.bin
 NVRAM=$FWHOME/nvram/dcnvram.bin
 
 ## Tools
-YAFUHOME=/usr/local/bin/yafuflash
+YAFUHOME=/usr/local/bin/scripts/firmware/yafuflash
 IPMITOOL=$(which ipmitool)
 FLASHROM=$(which flashrom)
 NVRAMTOOL=$(which nvramtool)
