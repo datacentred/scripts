@@ -25,6 +25,9 @@ IPMITOOL=$(which ipmitool)
 FLASHROM=$(which flashrom)
 NVRAMTOOL=$(which nvramtool)
 
+## Services
+TIMESERVER=ntp0
+
 function check_ipmi_ver {
 	# Checks whether the current IPMI firmware revision matches what's defined in $IPMIFWVER
 	if [ $($IPMITOOL mc info | grep 'Firmware Revision' | awk '{ print $4 }') != $IPMIFWVER ]; then
@@ -79,6 +82,21 @@ function copy_bios_settings {
 	echo "... done!"
 }
 
+function set_hw_clock {
+    # Updates the time from a time server and sets the hw clock
+    echo "Updating system clock from time server .."
+    if ntpdate $TIMESERVER; then
+        echo "Setting hardware clock"
+        if hwclock --systohc --utc --noadjfile; then
+            echo "Hardware clock set correctly"
+        else
+            echo "Could not set hardware clock"
+        fi
+    else
+        echo "Could not update from time server"
+    fi
+}
+
 case $1 in
 	check_ipmi)
 		check_ipmi_ver
@@ -95,6 +113,9 @@ case $1 in
 		update_bios $BIOSFW
 		copy_bios_settings
 		;;
+    set_hw_clock)
+        set_hw_clock
+        ;;
 	full)
 		# Full check / update where necessary process for BIOS and IPMI firmware
 		# Check IPMI version, if it's not what we expect then we upgrade
@@ -109,8 +130,9 @@ case $1 in
 		 	update_bios $BIOSFW
 		 	copy_bios_settings
 		fi
+        set_hw_clock
 		;;
 	*)
-		echo "Usage: $0 {check_ipmi|check_bios|update_ipmi|update_bios|full}"
+		echo "Usage: $0 {check_ipmi|check_bios|update_ipmi|update_bios|set_hw_clock|full}"
 		;;
 esac
