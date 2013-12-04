@@ -18,7 +18,7 @@ BIOSVER=`dmidecode | grep -A 2 "BIOS Information" | grep Version | cut -d ":" -f
 IPMIVER=`ipmitool mc info | grep Firmware\ Revision | cut -d ":" -f 2 | sed -e 's/^[ \t]*//'`
 SWITCH=`awk '/Device\ ID/ { getline; print $0 }' /var/log/upstart/getswport.log | awk '{ print $2 }'`
 SWPORT=`awk '/Port\ ID/ { getline; print $0 }' /var/log/upstart/getswport.log | awk '{ print $2 }'`
-SWIP=`awk '/Addresses/ { getline; print $0 }' /var/log/upstart/getswport.log | awk '{ print $2 }'
+SWIP=`awk '/Addresses/ { getline; print $0 }' /var/log/upstart/getswport.log | awk '{ print $2 }'`
 echo "-------------------------------------------------------" 
 echo "Hostname: $HOSTNAME DNS Domain: $DNSDOMAINNAME"
 echo "Kernel: $KERNEL"
@@ -26,7 +26,8 @@ echo "Processor: $PNUMS cores ${PMHZ}MHz $PMODEL"
 echo "Memory: $MEMTOTAL $MT"
 echo "MAC: $MACADDR"
 echo "IP: $IPADDR Netmask: $NETMASK Gateway: $GATEWAY"
-echo "Switch: $SWITCH $SWPORT SwitchIP: $SWIP"
+echo "Switch: $SWITCH" 
+echo "SwitchPort: $SWPORT"
 echo "BIOS Version: $BIOSVER IPMI Version: $IPMIVER"
 echo "-------------------------------------------------------"
 
