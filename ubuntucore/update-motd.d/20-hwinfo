@@ -1,0 +1,32 @@
+#!/bin/sh
+KERNEL=`/bin/uname -a | awk '{print $3}'`
+HOSTNAME=`hostname -s`
+DNSDOMAINNAME=`hostname -d`
+MEMTOTAL=`cat /proc/meminfo | grep '^MemTotal' | awk '{print $2}'`
+MT=`cat /proc/meminfo | grep '^MemTotal' | awk '{print $3}'`
+SWAPT=`cat /proc/meminfo | grep '^SwapTotal:' | awk '{print $2}'`
+ST=`cat /proc/meminfo | grep '^SwapTotal:' | awk '{print $3}'`
+
+PMODEL=`cat /proc/cpuinfo | grep '^model name' | awk '{print $4 $5 $6}' | head -1`
+PMHZ=`cat /proc/cpuinfo | grep '^cpu MHz' | awk '{print $4}'| sed -e 's/\.[0-9]*//g' | head -1`
+PNUMS=`cat /proc/cpuinfo | grep '^processor' | wc -l | awk '{print $1}' | head -1`
+IPADDR=`ifconfig | grep inet\ addr | grep -v 127 | awk '{print $2}' | cut -d ":" -f 2`
+MACADDR=`ifconfig | grep eth0 | awk '{ print $5 }'`
+NETMASK=`ifconfig | grep inet\ addr | grep -v 127 | awk '{print $4}' | cut -d ":" -f 2`
+GATEWAY=`route | grep default | awk '{ print $2 }'`
+BIOSVER=`dmidecode | grep -A 2 "BIOS Information" | grep Version | cut -d ":" -f 2 | sed -e 's/^[ \t]*//' | sed 's/[ \t]*$//'`
+IPMIVER=`ipmitool mc info | grep Firmware\ Revision | cut -d ":" -f 2 | sed -e 's/^[ \t]*//'`
+SWITCH=`awk '/Device\ ID/ { getline; print $0 }' /var/log/upstart/getswport.log | awk '{ print $2 }'`
+SWPORT=`awk '/Port\ ID/ { getline; print $0 }' /var/log/upstart/getswport.log | awk '{ print $2 }'`
+SWIP=`awk '/Addresses/ { getline; print $0 }' /var/log/upstart/getswport.log | awk '{ print $2 }'
+echo "-------------------------------------------------------" 
+echo "Hostname: $HOSTNAME DNS Domain: $DNSDOMAINNAME"
+echo "Kernel: $KERNEL"
+echo "Processor: $PNUMS cores ${PMHZ}MHz $PMODEL"
+echo "Memory: $MEMTOTAL $MT"
+echo "MAC: $MACADDR"
+echo "IP: $IPADDR Netmask: $NETMASK Gateway: $GATEWAY"
+echo "Switch: $SWITCH $SWPORT SwitchIP: $SWIP"
+echo "BIOS Version: $BIOSVER IPMI Version: $IPMIVER"
+echo "-------------------------------------------------------"
+

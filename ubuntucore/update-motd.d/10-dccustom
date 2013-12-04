@@ -1,0 +1,7 @@
+#!/bin/sh
+figlet ubuntu core
+echo "DataCentred Embedded Boot Image - Read Only NFS Root"
+echo "Built on Ubuntu Core 12.04 LTS"
+/usr/games/fortune debian computers bofh-excuses linux startrek -s | /usr/games/cowsay -n
+
+
