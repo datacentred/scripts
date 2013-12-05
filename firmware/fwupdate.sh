@@ -73,6 +73,18 @@ function verify_bios {
 	$FLASHROM -v $1 
 }
 
+function check_bios_version {
+	BIOSVER=`dmidecode | grep -A 2 "BIOS Information" | grep Version | cut -d ":" -f 2 | sed -e 's/^[ \t]*//' | sed 's/[ \t]*$//'`
+	echo "Installed BIOS is $BIOSVER"
+	echo "Newest BIOS is $BIOSFWVER"
+	if [ $BIOSVER != $BIOSFWVER ]; then
+		echo "BIOS levels do not match"
+		export UPDATE=1
+	else
+		echo "BIOS levels match"
+	fi
+}
+
 function copy_bios_settings {
 	# Copies BIOS settings, requires 'nvram' LKM to loaded and /dev/nvram present
 	# We don't check for this as it's part of our base image.
@@ -101,8 +113,11 @@ case $1 in
 	check_ipmi)
 		check_ipmi_ver
 		;;
-	check_bios)
+	verify_bios)
 		verify_bios $BIOSFW
+		;;
+	check_bios_version)
+		check_bios_version
 		;;
 	update_ipmi)
 		set_usb
@@ -126,13 +141,14 @@ case $1 in
 		 	set_ipmi_dedicated
 		fi
 		# Same for BIOS version, check against known good file and if there's any mismatch we upgrade
-		if ! verify_bios $BIOSFW; then
+		check_bios_version
+		if $UPDATE ; then
 		 	update_bios $BIOSFW
 		 	copy_bios_settings
 		fi
         set_hw_clock
 		;;
 	*)
-		echo "Usage: $0 {check_ipmi|check_bios|update_ipmi|update_bios|set_hw_clock|full}"
+		echo "Usage: $0 {check_ipmi|verify_bios|check_bios_version|update_ipmi|update_bios|set_hw_clock|full}"
 		;;
 esac
