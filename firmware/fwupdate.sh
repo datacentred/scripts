@@ -142,7 +142,7 @@ case $1 in
 		fi
 		# Same for BIOS version, check against known good file and if there's any mismatch we upgrade
 		check_bios_version
-		if $UPDATE ; then
+		if [ $UPDATE ] ; then
 		 	update_bios $BIOSFW
 		 	copy_bios_settings
 		fi
