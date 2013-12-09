@@ -133,6 +133,11 @@ case $1 in
         ;;
 	full)
 		# Full check / update where necessary process for BIOS and IPMI firmware
+		# Check if we're a Supermicro machine and exit if we aren't
+		if ! dmidecode | grep -m 1 Supermicro; then
+			echo "Not Supermicro platform - exiting"
+			exit
+		fi
 		# Check IPMI version, if it's not what we expect then we upgrade
 		if ! check_ipmi_ver; then
 			echo "IPMI firmware version mismatch, upgrading to $IPMIFWVER"
