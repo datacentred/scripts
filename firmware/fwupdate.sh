@@ -30,7 +30,7 @@ TIMESERVER=ntp0
 
 function check_hardware {
 	# Check if we're a Supermicro machine and exit if we're not
-        if ! dmidecode | grep -m 1 Supermicro; then
+        if ! dmidecode | grep -m 1 Supermicro >/dev/null; then
         	echo "Not Supermicro platform - exiting"
                 exit
         fi
