@@ -28,6 +28,14 @@ NVRAMTOOL=$(which nvramtool)
 ## Services
 TIMESERVER=ntp0
 
+function check_hardware {
+	# Check if we're a Supermicro machine and exit if we're not
+        if ! dmidecode | grep -m 1 Supermicro; then
+        	echo "Not Supermicro platform - exiting"
+                exit
+        fi
+}
+
 function check_ipmi_ver {
 	# Checks whether the current IPMI firmware revision matches what's defined in $IPMIFWVER
 	if [ $($IPMITOOL mc info | grep 'Firmware Revision' | awk '{ print $4 }') != $IPMIFWVER ]; then
@@ -111,20 +119,25 @@ function set_hw_clock {
 
 case $1 in
 	check_ipmi)
+		check_hardware
 		check_ipmi_ver
 		;;
 	verify_bios)
+		check_hardware
 		verify_bios $BIOSFW
 		;;
 	check_bios_version)
+		check_hardware
 		check_bios_version
 		;;
 	update_ipmi)
+		check_hardware
 		set_usb
 		update_ipmi $IPMIFW
 		set_ipmi_dedicated
 		;;
 	update_bios)
+		check_hardware
 		update_bios $BIOSFW
 		copy_bios_settings
 		;;
@@ -133,11 +146,7 @@ case $1 in
         ;;
 	full)
 		# Full check / update where necessary process for BIOS and IPMI firmware
-		# Check if we're a Supermicro machine and exit if we aren't
-		if ! dmidecode | grep -m 1 Supermicro; then
-			echo "Not Supermicro platform - exiting"
-			exit
-		fi
+		check_hardware
 		# Check IPMI version, if it's not what we expect then we upgrade
 		if ! check_ipmi_ver; then
 			echo "IPMI firmware version mismatch, upgrading to $IPMIFWVER"
