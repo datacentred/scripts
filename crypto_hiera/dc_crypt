@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+"""
+DataCentred encryption/decryption for git
+
+Based on the ubiquitous AES256-CBC standard
+
+Key generation creates a 256 bit encryption key and 128 bit initialsation
+vector in ~/.dc_aes_key
+
+Encryption uses the key and IV to encipher data from standard in, converting
+it to base64 encoding, and printing to standard out
+
+Decryption does exacly the opposite, reading a base64 encoded string from
+standard in, decoding, extracting the data data length, then printing that
+length of data to standard out
+"""
+
+import os
+import sys
+import struct
+import base64
+from Crypto import Random
+from Crypto.Cipher import AES
+
+HEADER   = 'DCCRYPTO'
+KEY_PATH = os.environ['HOME'] + '/.dc_aes_key'
+KEY_SIZE = 32
+
+def syntax():
+    """
+    Echo the syntax to stderr and exit with an error
+    """
+    sys.stderr.write('dc_crypt {keygen|encipher|decipher}\n')
+    exit(1)
+
+def gen_key():
+    """
+    Generate a new key
+    """
+    try:
+        keyf = open(KEY_PATH, 'w')
+    except IOError:
+        sys.stderr.write('Unable to open {0} for writing\n'.format(KEY_PATH))
+        exit(1)
+    keyf.write(Random.new().read(KEY_SIZE + AES.block_size))
+    keyf.close()
+
+def get_key():
+    """
+    Try and read in the private key
+    """
+    try:
+        keyf = open(KEY_PATH, 'r')
+    except IOError:
+        sys.stderr.write('Unable to open {0} for reading\n'.format(KEY_PATH))
+        exit(1)
+    key = keyf.read(KEY_SIZE)
+    keyf.close()
+    return key
+
+def get_ivec():
+    """
+    Try and read the initialization vector
+    """
+    try:
+        keyf = open(KEY_PATH, 'r')
+    except IOError:
+        sys.stderr.write('Unable to open {0} for reading\n'.format(KEY_PATH))
+        exit(1)
+    keyf.seek(KEY_SIZE)
+    ivec = keyf.read(AES.block_size)
+    keyf.close()
+    return ivec
+
+def round_up(size, alignment):
+    """
+    Round a size up to be alignment aligned
+    """
+    return (size + alignment - 1) & ~(alignment - 1)
+
+def encipher():
+    """
+    Encipher data from stdin
+    """
+    key = get_key()
+    ivec = get_ivec()
+    data = sys.stdin.read()
+    datalen = len(data)
+
+    # Now for the fun bit, we're going to append the data to a 32 bit
+    # integer which describes then actual length of the data as we
+    # need to round the cypher input to the block size, this allows
+    # recovery of the exact data length upon deciphering.  We also
+    # specify big-endian encoding to support cross platform operation
+    buflen = round_up(datalen + 4, AES.block_size)
+    buf = bytearray(buflen)
+    struct.pack_into('>i{0}s'.format(buflen - 4), buf, 0, datalen, data)
+
+    # Encipher the data
+    cipher = AES.new(key, AES.MODE_CBC, ivec)
+    ciphertext = cipher.encrypt(str(buf))
+
+    # And echo out the result
+    sys.stdout.write(HEADER)
+    sys.stdout.write(base64.b64encode(ciphertext))
+
+def decipher_common(filedesc):
+    """
+    Decipher data from a file object
+    """
+    key = get_key()
+    ivec = get_ivec()
+    ciphertext = base64.b64decode(filedesc.read())
+
+    # Decipher the data
+    cipher = AES.new(key, AES.MODE_CBC, ivec)
+    buf = cipher.decrypt(ciphertext)
+
+    # Unpack the buffer, first unpacking the big endian data length
+    # then unpacking that length of data
+    datalen, = struct.unpack_from('>i', buf)
+    data, = struct.unpack_from('{0}s'.format(datalen), buf, 4)
+
+    # And echo out the result
+    sys.stdout.write(data)
+
+def decipher():
+    """
+    Decipher data from stdin
+    """
+    if sys.stdin.read(len(HEADER)) != HEADER:
+        sys.stderr.write('File is not encrypted')
+        exit(1)
+    decipher_common(sys.stdin)
+
+def diff():
+    """
+    Like decipher but accepts a filename, and may or
+    may not be encrypted
+    """
+    try:
+        filedesc = open(sys.argv[2], 'r')
+    except IOError:
+        sys.stderr.write('Unable to open {0} for reading\n'.format(sys.argv[2]))
+        exit(1)
+    if filedesc.read(len(HEADER)) != HEADER:
+        filedesc.seek(0)
+        sys.stdout.write(filedesc.read())
+    else:
+        decipher_common(filedesc)
+    filedesc.close()
+
+def main():
+    """
+    Main guts of the program
+    """
+    if sys.argv[1] == 'keygen':
+        if len(sys.argv) != 2:
+            syntax()
+        gen_key()
+    elif sys.argv[1] == 'encipher':
+        if len(sys.argv) != 2:
+            syntax()
+        encipher()
+    elif sys.argv[1] == 'decipher':
+        if len(sys.argv) != 2:
+            syntax()
+        decipher()
+    elif sys.argv[1] == 'diff':
+        if len(sys.argv) != 3:
+            syntax()
+        diff()
+    else:
+        syntax()
+
+main()
