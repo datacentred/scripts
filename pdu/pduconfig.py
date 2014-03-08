@@ -60,13 +60,13 @@ def upload_config(host,filename,user,pwd):
 def usage():
         print 'pduconfig.py -i <ipaddress> -n <hostname> -u <ftpusername> -p <ftppassword>'
 
-def main(args):
+def main(argv):
     ipaddress = ''
     hostname = ''
     user = ''
     pwd = ''
     try:
-        opts, args = getopt.getopt(args,"hi:n:u:p:")
+        opts, args = getopt.getopt(argv,"hi:n:u:p:")
     except getopt.GetoptError:
         usage()
         sys.exit(2)
