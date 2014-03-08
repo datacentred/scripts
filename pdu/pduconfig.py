@@ -1,3 +1,8 @@
+# APC PDU config updating
+# -i IP of the PDU
+# -n hostname to set in the config and which gets sent to DNS
+# -u FTP username
+# -p FTP password
 #!/usr/bin/python
 import ConfigParser
 import ftplib
