@@ -13,6 +13,7 @@ import os
 
 def get_config(file):
     config = ConfigParser.ConfigParser()
+    # Make sure we are case sensitive
     config.optionxform=str
     try:
         config.read(file)
