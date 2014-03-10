@@ -1,12 +1,19 @@
+# APC PDU config updating
+# -i IP of the PDU
+# -n hostname to set in the config and which gets sent to DNS
+# -u FTP username
+# -p FTP password
 #!/usr/bin/python
 import ConfigParser
 import ftplib
 import socket
 import sys
 import getopt
+import os
 
 def get_config(file):
     config = ConfigParser.ConfigParser()
+    # Make sure we are case sensitive
     config.optionxform=str
     try:
         config.read(file)
@@ -35,14 +42,14 @@ def download_config(host,filename,user,pwd):
 
 def upload_config(host,filename,user,pwd):
     try:
-        file = open(filename, 'r')
+        file = open(filename, 'rb')
     except IOError:
         print 'Cannot open ', filename
         print 'I/O error({0}): {1}'.format(e.errno, e.strerror)
     else:
         try:
-            ftp = FTP(host,user,pwd)
-            ftp.storbinary('STOR %s' % filename )
+            ftp = ftplib.FTP(host,user,pwd)
+            ftp.storbinary('STOR %s' % 'config.ini', file )
         except IOError,e:
             print 'I/O error({0}): {1}'.format(e.errno, e.strerror)
         except socket.error,e:
@@ -54,13 +61,13 @@ def upload_config(host,filename,user,pwd):
 def usage():
         print 'pduconfig.py -i <ipaddress> -n <hostname> -u <ftpusername> -p <ftppassword>'
 
-def main(args):
+def main(argv):
     ipaddress = ''
     hostname = ''
     user = ''
     pwd = ''
     try:
-        opts, args = getopt.getopt(args,"hi:n:u:p:")
+        opts, args = getopt.getopt(argv,"hi:n:u:p:")
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -99,9 +106,11 @@ def main(args):
         # Write out the new config file
         with open('/tmp/config.ini', 'wb') as newconf:
             c1.write(newconf)
-
-# Upload back to the PDU
-# Remove the temporary config files
+            newconf.close()
+        # Upload back to the PDU
+        upload_config(ipaddress,'/tmp/config.ini',user,pwd)
+        # Remove the temporary config files
+        os.remove('/tmp/config.ini')
 
     else:
         usage()
