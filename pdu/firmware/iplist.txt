@@ -1,0 +1,18 @@
+; Copy, paste, and modify one entry for each device in your network.
+; Lines with leading semicolons (;) are considered comments.
+; Note: Order and spacing are important and need to be the same as the example.
+
+; SystemIP is the IPv4 or IPv6 address of the device
+; SystemUserName is the name of an enabled Administrator or higher account on the NMC
+; SystemPassword is the password of an enabled Administrator or higher account on the NMC
+; AllowDowngrade can be 0 for disabled (do not allow) or 1 for enabled (allow) for firmware downgrades
+  
+; SystemIP=192.168.0.1
+; SystemUserName=apc
+; SystemPassword=apc
+; AllowDowngrade=0
+
+; SystemIP=192.168.0.2
+; SystemUserName=apc
+; SystemPassword=apc
+; AllowDowngrade=1
