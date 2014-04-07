@@ -1,0 +1,26 @@
+To upgrade firmware on APC PDU's
+
+ftp to the pdu
+set mode to binary
+upload the aos first
+if you are currently running a 1.x firmware, you need to upload the 2.02 firmware first as ftp is broken
+NOTE : going from 1x to 2x firmware will wipe the device names
+quit the ftp client
+allow the pdu to reboot
+ftp in again
+you should see that the ftp server now matches the new firmware version number
+set binary mode again
+upload the rpdu firmware
+allow the unit to reboot again
+if you now telnet or ssh in, on the first screen you should see :
+Stat : P+ N+ A+
+This screen should also show both the app and AOS at the new version
+
+If the app doesnt work from the web interface, you probably forgot to set binary mode when uploading
+Re-upload the rpdu in binary mode and all should be fine
+
+To get and put configs :
+
+wget ftp://pdu16/config.ini --user=root --password=$password
+ncftpput -u root -p $password pdu16 / config.ini
+
