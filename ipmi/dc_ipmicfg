@@ -1,0 +1,293 @@
+#!/usr/bin/env python
+"""
+DataCentred tool for configuring SuperMicro IPMI
+
+The script works by sending http GET/POST requests to the IPMI web server
+to update various bits and pieces in the configuration.
+
+At the moment, we have a hardcoded configuration for RADIUS and change the
+hostname in the network configuration to a parameter passed in from the 
+command-line.
+
+This can easily be extended to configure more things if necessary.
+
+Example Usage:
+
+dc_ipmicfg --ipaddress 10.10.128.36 --configurenetwork 
+           --hostname compute6-ipmi  --configureradius
+"""
+#===============================================================================
+# IMPORTS
+#===============================================================================
+import requests
+import re
+import optparse
+import sys
+import time
+#===============================================================================
+
+#===============================================================================
+# CONSTANTS
+#===============================================================================
+
+USERNAME         = 'ADMIN'
+PASSWORD         = 'ADMIN'
+LOGIN_URI        = '/rpc/WEBSES/create.asp'
+NETWORK_SET_URI  = '/rpc/setnwconfig.asp'
+NETWORK_GET_URI  = '/rpc/getnwconfig.asp'
+RADIUS_SET_URI   = '/rpc/setradiuscfg.asp'
+RADIUS_GET_URI   = '/rpc/getradiuscfg.asp'
+
+#===============================================================================
+
+#===============================================================================
+# Global configuration variables
+# This is what we send to the server at set*config.asp
+#===============================================================================
+
+# This is used to post data to the server in order to login
+login_payload = {
+    'WEBVAR_USERNAME': USERNAME,
+    'WEBVAR_PASSWORD': PASSWORD
+}
+
+# This is used to post data to the server in order to configure network
+network_payload = {
+    'HostName'       : None,
+    'ChannelNum'     : 1,
+    'IPAddrSource'   : None,
+    'EnableVLAN'     : None,
+    'VLANTag'        : None,
+    'IPAddrSource'   : None,
+    'IP'             : None,
+    'Mask'           : None,
+    'Gateway'        : None,
+    'PrimaryDNS'     : None,
+    'SecondaryDNS'   : None,
+    'DomainName'     : None
+}
+
+# This is used to post data to the server in order to configure radius
+radius_payload = {
+    'ENABLE'         : 1,
+    'PORTNUM'        : 1812 ,
+    'TIMEOUT'        : 3,
+    'IP'             : '10.10.192.111', # This is machine cartman
+    'SECRET'         : 'kJvRRR.6'
+}
+
+#===============================================================================
+
+
+#===============================================================================
+# Description: Function to parse the command-line parameters
+# Parameters : None
+# Returns    : A tuple with of (options,arguments)
+#===============================================================================
+
+def parseCommandLineParams():
+    parser = optparse.OptionParser(usage='%prog [OPTIONS]')
+    
+    parser.add_option('-i', '--ipaddress', type='str',
+                      help='Specify the ip address of the ipmi interface')
+
+    parser.add_option('-t', '--hostname', type='str',
+                      help='If --configurenetwork is specified, this is the new hostname')
+    
+    parser.add_option('-n', '--configurenetwork', action="store_true",
+                      help='Specify this flag if you want to configure the network')
+
+    parser.add_option('-l', '--configureradius', action="store_true",
+                      help='Specify this flag if you want to configure radius')
+    
+    if (len(sys.argv) == 1):
+        parser.print_help()
+        sys.exit()
+    
+    (options, args) = parser.parse_args()
+    return options, args
+
+#===============================================================================
+
+#===============================================================================
+# Description: Function to login and set the session cookie
+# Parameters : The session variable
+# Returns    : Nothing
+#===============================================================================
+
+def login(s, ip_address):
+    print "Logging in..."
+    login_resp = s.post('http://%s%s' % (ip_address, LOGIN_URI),
+                        data=login_payload, timeout=10)
+    if check_response_code(login_resp) != '0':
+        print "Failed to login."
+        sys.exit("Exiting...")
+
+    print "Creating session..."
+    success, cookie = get_config_value(login_resp, 'SESSION_COOKIE')
+
+    # Create a dictionary to be insterted to the cookiejar
+    cookie_dict = {"SessionCookie": cookie}
+    requests.utils.add_dict_to_cookiejar(s.cookies, cookie_dict)
+
+#===============================================================================
+
+#===============================================================================
+# Description: Function to configure the network.
+#              NOTE: At the moment we only change the hostname.
+# Parameters : The session variable
+# Returns    : Nothing
+#===============================================================================
+
+def configure_network(s, ip_address):
+    print "Getting network configuration..."
+    network_get_cfg_resp = s.get('http://%s%s' % (ip_address, NETWORK_GET_URI),
+                               timeout=10)
+    if check_response_code(network_get_cfg_resp) != '0':
+        print "Failed to get existing network configuration."
+        print "Network configuration was not changed."
+        return
+    # Populate the configuration dictionary with the initial network configuration
+    for key in network_payload.keys():
+        if network_payload[key] is None:
+        # We need these ifs because there's a difference between what we GET
+        # from the server and what we POST to it in terms of variable names
+            if key == "EnableVLAN":
+                success, network_payload[key] = \
+                    get_config_value(network_get_cfg_resp, "VLanEnable")
+            elif key == "VLANTag":
+                success, network_payload[key] = \
+                    get_config_value(network_get_cfg_resp, "VLANID")
+            elif key != "ChannelNum":
+                success, network_payload[key] = \
+                    get_config_value(network_get_cfg_resp, key)
+            if success == False:
+                print "Couldn't find value for key %s in server response" % key
+
+    print "Changing network configuration..." 
+    network_set_cfg_resp = s.post('http://%s%s' % (ip_address, NETWORK_SET_URI),
+                                  data=network_payload, timeout=10)
+
+    if network_set_cfg_resp.status_code != 200:
+        print "Network configuration change failed. Please investigate."
+    else:
+        print "Network configuration changed successfully!"
+
+#===============================================================================
+
+#===============================================================================
+# Description: Function to configure radius.
+# Parameters : The session variable
+# Returns    : Nothing
+#===============================================================================
+
+def configure_radius(s, ip_address):
+    print "Getting radius configuration..."
+    radius_get_cfg_resp = s.get('http://%s%s' % (ip_address, RADIUS_GET_URI),
+                              timeout=10)
+    if check_response_code(radius_get_cfg_resp) != '0':
+        print "Failed to get the existing radius configuration."
+        print "Radius configuration was not changed."
+        return
+    # Populate the configuration dictionary with the initial radius configuration
+    for key in radius_payload.keys():
+        # This is generally not needed, but is here in case we want to extend the
+        # tool to configure only parts of the whole configuration as we do with 
+        # network configuration
+        if radius_payload[key] is None:
+        # The secret key-value pair does not get returned
+            if key != "SECRET":
+                success, radius_payload[key] = get_config_value(radius_get_cfg_resp, key)
+                if success == False:
+                    print "Couldn't find value for key %s in server response" % key
+
+    radius_set_cfg_resp = s.post('http://%s%s' % (ip_address, RADIUS_SET_URI),
+                               data=radius_payload, timeout=10)  
+
+    if radius_set_cfg_resp.status_code != 200:
+        print "Radius configuration change failed. Please investigate."
+    else:
+        print "Radius configuration changed successfully!"
+
+#===============================================================================
+
+#===============================================================================
+# Description: A successful server response means that a variable called 
+#              HAPI_STATUS has value one. We use this function to check that 
+#              by parsing the received javascript. 
+# Parameters : The response variable
+# Returns    : The response code (the value of HAPI_STATUS)
+#===============================================================================
+
+def check_response_code(resp):
+    # Try to retrieve the HAPI_STATUS code from the server response
+    rc_match = re.search(r"HAPI_STATUS:(\w+)", resp.content)
+    # If we managed to retrieve it
+    if rc_match is not None:
+        # set the return code variable
+        rc = rc_match.group(1)
+    else:
+        print "Received a bad server response:"
+        print resp.content
+        rc = resp.content
+    return rc
+
+#===============================================================================
+
+#===============================================================================
+# Description: The global configuration dictionaries get their values using 
+#              this function. We parse the server response for the value of a 
+#              specified key and then return that. 
+# Parameters : The response variable and the key that needs the value lookup
+# Returns    : Returns a tuple with the result of the lookup and the value 
+#===============================================================================
+
+def get_config_value(resp, key):
+    match = re.search(r"'%s'\s*:\s*(')?([\w\.\:]*)(')?" % key, resp.content)
+    if match != None:
+        return True, match.group(2)
+    else:
+        return False, None
+
+#===============================================================================
+
+#===============================================================================
+# Main program
+#===============================================================================
+
+def main():
+    options, args = parseCommandLineParams()
+    # At the moment we only setup the hostname
+    network_payload["HostName"] = options.hostname
+    ip_address = options.ipaddress
+    with requests.session() as s:
+        login(s, ip_address)
+        if options.configureradius == True:
+            configure_radius(s, ip_address)
+        # Network needs to be the last thing we're configuring, because
+        # it resets our session and our cookie gets rejected after that.
+        if options.configurenetwork == True:
+            configure_network(s, ip_address)
+
+#===============================================================================
+
+#===============================================================================
+# This wraps the call to main.
+# Any exceptions that are not related to the main program are caught here.
+#===============================================================================
+
+if __name__ == "__main__":
+    try:
+        main()
+        sys.exit(0)
+    except KeyboardInterrupt:
+        print("Keyboard interrupt.")
+        sys.exit(0)
+    except SystemExit:
+        sys.exit(0)
+    except Exception, e:
+        print str(e)
+        traceback.print_exc()
+        sys.exit(1)
+
+#===============================================================================
