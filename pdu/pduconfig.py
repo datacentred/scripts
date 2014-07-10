@@ -111,6 +111,8 @@ def main(argv):
         upload_config(ipaddress,'/tmp/config.ini',user,pwd)
         # Remove the temporary config files
         os.remove('/tmp/config.ini')
+        # Change the default user password
+        upload_config(ipaddress,'defaultuser.csf',user,pwd)
 
     else:
         usage()
