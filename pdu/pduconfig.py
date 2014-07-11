@@ -40,7 +40,7 @@ def download_config(host,filename,user,pwd):
             file.close()
             ftp.quit()
 
-def upload_config(host,filename,user,pwd):
+def upload_config(host,filename,remotefilename,user,pwd):
     try:
         file = open(filename, 'rb')
     except IOError:
@@ -49,7 +49,7 @@ def upload_config(host,filename,user,pwd):
     else:
         try:
             ftp = ftplib.FTP(host,user,pwd)
-            ftp.storbinary('STOR %s' % 'config.ini', file )
+            ftp.storbinary('STOR %s' % remotefilename, file )
         except IOError,e:
             print 'I/O error({0}): {1}'.format(e.errno, e.strerror)
         except socket.error,e:
@@ -108,11 +108,11 @@ def main(argv):
             c1.write(newconf)
             newconf.close()
         # Upload back to the PDU
-        upload_config(ipaddress,'/tmp/config.ini',user,pwd)
+        upload_config(ipaddress,'/tmp/config.ini','config.ini',user,pwd)
         # Remove the temporary config files
         os.remove('/tmp/config.ini')
         # Change the default user password
-        upload_config(ipaddress,'defaultuser.csf',user,pwd)
+        upload_config(ipaddress,'defaultuser.csf','defaultuser.csf',user,pwd)
 
     else:
         usage()
