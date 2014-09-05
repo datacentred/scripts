@@ -70,7 +70,7 @@ function update_bios {
 	# Updates motherboard BIOS to version passed as $1
 	echo "Beginning BIOS update process, hit Ctrl-C to cancel... "
 	sleep 5
-	$FLASHROM -w $1
+	$FLASHROM --programmer internal -w $1
 	echo "... done!"
 }
 
