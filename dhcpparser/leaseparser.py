@@ -1,34 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+
 from pyparsing import *
 import getopt
 import sys
 
-# FIXME add configurable options for infile and outfile
-# FIXME wrap in a proper main function
-# FIXME take out testing data
-
-# An few host entries from dhcpd.leases for testing
-sample_data = """
-host compute6.sal01.datacentred.co.uk {
-  dynamic;
-  hardware ethernet 00:30:48:f2:df:48;
-  fixed-address 10.10.160.135;
-        supersede server.filename = "pxelinux.0";
-        supersede server.next-server = 0a:0a:c0:fa;
-        supersede host-name = "compute6.sal01.datacentred.co.uk";
-}
-host compute19-int.sal01.datacentred.co.uk {
-  dynamic;
-  hardware ethernet 00:30:48:f7:a9:0b;
-  fixed-address 10.10.170.151;
-        supersede host-name = "compute19-int.sal01.datacentred.co.uk";
-}
-host compute14-int.sal01.datacentred.co.uk {
-  dynamic;
-  hardware ethernet 00:30:48:f7:a9:91;
-  fixed-address 10.10.170.140;
-}
-"""
 def usage():
         print 'leaseparser.py -i <inputfile> -o <outputfile>'
 
@@ -78,26 +53,29 @@ def main(argv):
         host = Literal('host') + fqdn + lbrace + Optional(lease_type) + Optional(ddns_hostname) + Optional(ddns_domainname) + Optional(hardware_ethernet) + Optional(fixed_address) + Optional(supersede_server_filename) + Optional(supersede_server_nextserver) + Optional(supersede_server_hostname) + rbrace
 
         #results = host.scanString(sample_data)
-        # FIXME check for IO errors on opening files
-        file_r = open(inputfile,"rb")
-        file_w = open(outputfile,"w")
-        results = host.scanString("".join(file_r.readlines()))
-
-        for result in results:
-            file_w.write('host %s {\n' % result[0].fqdn)
-            file_w.write('\tdynamic;\n')
-            file_w.write('\thardware ethernet %s;\n' % result[0].mac_address)
-            file_w.write('\tfixed-address %s;\n' % result[0].fixed_ip)
-            if result[0].supersede_filename:
-	        file_w.write('\t\t supersede server.filename = \"%s\";\n' % result[0].supersede_filename)
-            if result[0].supersede_nextserver:
-	        file_w.write('\t\t supersede server.next-server = %s;\n' % result[0].supersede_nextserver)
-            if result[0].supersede_fqdn:
- 	        file_w.write('\t\t supersede host-name = \"%s\";\n' % result[0].supersede_fqdn)
-            file_w.write('}\n')
-
-        file_r.close()
-        file_w.close()
+        try:
+            file_r = open(inputfile,"rb")
+            file_w = open(outputfile,"w")
+            results = host.scanString("".join(file_r.readlines()))
+            for result in results:
+                try:
+                        file_w.write('host %s {\n' % result[0].fqdn)
+                        file_w.write('\tdynamic;\n')
+                        file_w.write('\thardware ethernet %s;\n' % result[0].mac_address)
+                        file_w.write('\tfixed-address %s;\n' % result[0].fixed_ip)
+                        if result[0].supersede_filename:
+                                file_w.write('\t\t supersede server.filename = \"%s\";\n' % result[0].supersede_filename)
+                        if result[0].supersede_nextserver:
+                                file_w.write('\t\t supersede server.next-server = %s;\n' % result[0].supersede_nextserver)
+                        if result[0].supersede_fqdn:
+                                file_w.write('\t\t supersede host-name = \"%s\";\n' % result[0].supersede_fqdn)
+                        file_w.write('}\n')
+                except IOError:
+                        print 'cannot write', arg
+            file_r.close()
+            file_w.close()
+        except IOError:
+            print 'cannot open', arg
 
     else:
         usage()
