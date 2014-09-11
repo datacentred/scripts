@@ -5,19 +5,7 @@
 
 # nick.jones@datacentred.co.uk
 
-## Versions
-IPMIFWVER="2.20"
-BIOSFWVER="2.1b"
-
-## Filesystem locations
-FWHOME=/usr/local/lib/firmware
-### IPMI Firmware
-IPMIFW=$FWHOME/ipmi/$IPMIFWVER/X8DTT220.ima
-### BIOS Firmware.  Note that this should be a dump (via flashrom) from a configured
-### machine, and should match the NVRAM dump taken below.
-BIOSFW=$FWHOME/bios/$BIOSFWVER/dcbios.bin
-### NVRAM settings.  See above.
-NVRAM=$FWHOME/nvram/dcnvram.bin
+source common.sh
 
 ## Tools
 YAFUHOME=/usr/local/bin/scripts/firmware/yafuflash
@@ -70,7 +58,7 @@ function update_bios {
 	# Updates motherboard BIOS to version passed as $1
 	echo "Beginning BIOS update process, hit Ctrl-C to cancel... "
 	sleep 5
-	$FLASHROM -w $1
+	$FLASHROM --programmer internal -w $1
 	echo "... done!"
 }
 
