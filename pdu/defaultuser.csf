@@ -1,1 +1,1 @@
-user -n apc -cp apc -pw canrovgesEg5 -el enable -ts us
+user -n apc -cp apc -pw somesecretpassword -el enable -ts us
