@@ -66,7 +66,7 @@ function verify_bios {
 	# Function to verify current BIOS
 	# Returns 0 if successful
 	echo "Verifying BIOS against $1 ..."
-	$FLASHROM -v $1 
+	$FLASHROM --programmer internal -v $1
 }
 
 function check_bios_version {
