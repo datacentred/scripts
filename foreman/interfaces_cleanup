@@ -1,0 +1,18 @@
+#!/usr/bin/env python
+import yaml
+import subprocess
+import re
+
+host_list = subprocess.check_output(['hammer','--output','yaml','host','list'])
+host_yaml = yaml.load(host_list)
+for host in host_yaml:
+    if host['Operating System']['hostgroup_name'] and re.match(r'^Ark\/OpenStack\/Compute\/*', host['Operating System']['hostgroup_name']):
+        print "Checking %s" % host['Name']
+        host_interfaces = yaml.load(subprocess.check_output(['hammer','--output','yaml','host','interface','list','--host',host['Name']]))
+        for interface in host_interfaces:
+            if interface['Identifier'] and re.match(r'^qbr*|^qvo*|^qvb*|^tap*|^ovs*', interface['Identifier']):
+                print "%s scheduled for deletion" % interface['Identifier']
+                print interface
+                output = subprocess.check_output(['hammer','host','interface','delete','--host',host['Name'],'--id',str(interface['Id'])])
+                print output 
+
